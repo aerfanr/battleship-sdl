@@ -3,6 +3,14 @@
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_surface.h>
 
+CellState& operator++(CellState& state) {
+	return state = static_cast<CellState>(state + 1);
+}
+
+CellState& operator--(CellState& state) {
+	return state = static_cast<CellState>(state - 1);
+}
+
 bool draw_board(CellState board[10][10], SDL_Surface *screen, bool show, int x, int y) {
 	const int PADDING = 2;
 	const int CELL_SIZE = 24;
@@ -22,8 +30,8 @@ bool draw_board(CellState board[10][10], SDL_Surface *screen, bool show, int x, 
 		for (int j = 0; j < 10; j++) {
 			if (board[i][j] % 2) {
 				SDL_Rect outline = {
-					x + i * (CELL_SIZE + PADDING),
-					y + j * (CELL_SIZE + PADDING),
+					x + j * (CELL_SIZE + PADDING),
+					y + i * (CELL_SIZE + PADDING),
 					CELL_SIZE + 2 * PADDING,
 					CELL_SIZE + 2 * PADDING
 				};
@@ -35,8 +43,8 @@ bool draw_board(CellState board[10][10], SDL_Surface *screen, bool show, int x, 
 			}
 
 			SDL_Rect cell = {
-				x + i * (CELL_SIZE + PADDING) + PADDING,
-				y + j * (CELL_SIZE + PADDING) + PADDING,
+				x + j * (CELL_SIZE + PADDING) + PADDING,
+				y + i * (CELL_SIZE + PADDING) + PADDING,
 				CELL_SIZE,
 				CELL_SIZE
 			};
