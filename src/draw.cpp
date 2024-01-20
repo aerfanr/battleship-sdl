@@ -2,6 +2,8 @@
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_surface.h>
+#include <SDL2/SDL_video.h>
+#include <iostream>
 
 CellState& operator++(CellState& state) {
 	return state = static_cast<CellState>(state + 1);
@@ -11,7 +13,49 @@ CellState& operator--(CellState& state) {
 	return state = static_cast<CellState>(state - 1);
 }
 
-bool draw_board(CellState board[10][10], SDL_Surface *screen, bool show, int x, int y) {
+SDL_Window *window = nullptr;
+SDL_Renderer *renderer = nullptr;
+SDL_Surface *surface = nullptr;
+
+bool init_draw() {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
+		std::cerr << "Failed to initialize SDL: "
+			<< SDL_GetError() << std::endl;
+		return 1;
+	}
+
+	if (SDL_CreateWindowAndRenderer(
+		640,
+		480,
+		SDL_WINDOW_SHOWN,
+		&window,
+		&renderer
+	)) {
+		std::cerr << "Failed to create window and renderer: "
+			<< SDL_GetError() << std::endl;
+		return 1;
+	}
+
+	surface = SDL_GetWindowSurface(window);
+	if (surface == nullptr) {
+		std::cerr << "Failed to load image: "
+			<< SDL_GetError() << std::endl;
+		return 1;
+	}
+
+	SDL_FillRect(surface, NULL, 
+	      SDL_MapRGB(surface->format, 0xFF, 0xFF, 0xFF)
+	);
+
+	return 0;
+}
+
+void quit_draw() {
+	SDL_DestroyWindow(window);
+	SDL_Quit();
+}
+
+bool draw_board(CellState board[10][10], bool show, int x, int y) {
 	const int PADDING = 2;
 	const int CELL_SIZE = 24;
 	const int SEA_COLOR[2][3] = {{0x20, 0x20, 0xaa}, {0x40, 0x40, 0xaa}};
@@ -22,8 +66,8 @@ bool draw_board(CellState board[10][10], SDL_Surface *screen, bool show, int x, 
 		CELL_SIZE * 10 + PADDING * 11
 	};
 
-	SDL_FillRect(screen, &back, 
-	      SDL_MapRGB(screen->format, 0x20, 0x20, 0xaa)
+	SDL_FillRect(surface, &back, 
+	      SDL_MapRGB(surface->format, 0x20, 0x20, 0xaa)
 	);
 
 	for (int i = 0; i < 10; i++) {
@@ -37,8 +81,8 @@ bool draw_board(CellState board[10][10], SDL_Surface *screen, bool show, int x, 
 				};
 
 				SDL_FillRect(
-					screen, &outline,
-					SDL_MapRGB(screen->format, 0xFF, 0x00, 0x30)
+					surface, &outline,
+					SDL_MapRGB(surface->format, 0xFF, 0x00, 0x30)
 				);
 			}
 
@@ -80,11 +124,13 @@ bool draw_board(CellState board[10][10], SDL_Surface *screen, bool show, int x, 
 			}
 			
 			SDL_FillRect(
-				screen, &cell, 
-				SDL_MapRGB(screen->format, r, g, b)
+				surface, &cell, 
+				SDL_MapRGB(surface->format, r, g, b)
 			);
 		}
 	}
+
+	SDL_UpdateWindowSurface(window);
 
 	return 0;
 }
