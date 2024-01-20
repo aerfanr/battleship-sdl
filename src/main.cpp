@@ -16,6 +16,12 @@ SDL_Surface *surface = nullptr;
 
 CellState board1[10][10], board2[10][10];
 
+void draw_boards() {
+	draw_board(board1, surface, true, 300, 10);
+	draw_board(board2, surface, false, 10, 10);
+	SDL_UpdateWindowSurface(window);
+}
+
 bool init() {
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
 		std::cerr << "Failed to initialize SDL: "
@@ -95,6 +101,7 @@ void handle_stage1_input(int& x, int& y, SDL_Keycode k, bool& vertical, int& shi
 			}
 			ship++;
 			if (ship >= sizeof(SHIPS) / sizeof(SHIPS[0])) {
+				draw_boards();
 				return;
 			}
 			width = SHIPS[ship];
@@ -128,6 +135,8 @@ void handle_stage1_input(int& x, int& y, SDL_Keycode k, bool& vertical, int& shi
 			++board1[y + i][x + j];
 		}
 	}
+
+	draw_boards();
 }
 
 bool handle_attack(int x, int y, CellState board[10][10]) {
@@ -152,10 +161,8 @@ void handle_stage2_input(int& x, int& y, SDL_Keycode k) {
 	switch (k) {
 		case SDLK_SPACE:
 			if (handle_attack(x, y, board2)) break;
-			draw_board(board2, surface, false, 10, 10);
 			while (handle_attack(rand() % 10, rand() % 10, board1)) {
-				draw_board(board1, surface, true, 300, 10);
-				SDL_UpdateWindowSurface(window);
+				draw_boards();
 				SDL_Delay(1000);
 			}
 		break;
@@ -175,6 +182,8 @@ void handle_stage2_input(int& x, int& y, SDL_Keycode k) {
 		break;
 	}
 	++board2[y][x];
+
+	draw_boards();
 }
 
 void set_enemy_board() {
@@ -209,6 +218,7 @@ bool listen() {
 		++board1[cursor.y][cursor.x + i];
 	}
 
+	draw_boards();
 	while (ship < sizeof(SHIPS) / sizeof(SHIPS[0])) {
 		SDL_Event e;
 		if (SDL_WaitEvent(&e)) {
@@ -223,16 +233,11 @@ bool listen() {
 				);
 			}
 		}
-
-		if (draw_board(board1, surface, true, 300, 10)) return 1;
-
-		SDL_UpdateWindowSurface(window);
 	}
 
 	set_enemy_board();
 	++board2[cursor.y][cursor.x];
-	if (draw_board(board2, surface, false, 10, 10)) return 1;
-	SDL_UpdateWindowSurface(window);
+	draw_boards();
 
 	while (true) {
 		SDL_Event e;
@@ -245,10 +250,6 @@ bool listen() {
 				handle_stage2_input(
 					cursor.x, cursor.y, e.key.keysym.sym
 				);
-
-				if (draw_board(board2, surface, false, 10, 10)) return 1;
-				if (draw_board(board1, surface, true, 300, 10)) return 1;
-				SDL_UpdateWindowSurface(window);
 			}
 		}
 	}
