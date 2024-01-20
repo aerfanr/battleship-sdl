@@ -73,6 +73,11 @@ void quit_draw() {
 void draw_text(const char *text, SDL_Rect* rect) {
 	SDL_FillRect(surface, rect, SDL_MapRGB(surface->format, 0xFF, 0xFF, 0xFF));
 
+	if (text == nullptr) {
+		SDL_UpdateWindowSurface(window);
+		return;
+	}
+
 	SDL_Surface *text_surface = TTF_RenderText_Solid(font, text, SDL_Color{0x00, 0x00, 0x00});
 	rect->w = text_surface->w;
 	rect->h = text_surface->h;

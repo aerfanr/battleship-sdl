@@ -120,13 +120,14 @@ void handle_stage1_input(int& x, int& y, SDL_Keycode k, bool& vertical, int& shi
 	draw_boards();
 }
 
-bool handle_attack(int x, int y, CellState board[10][10]) {
+bool handle_attack(int x, int y, CellState board[10][10], int &score) {
 	switch (board[y][x]) {
 		case EMPTY:
 			board[y][x] = MISS;
 		break;
 		case FULL:
 			board[y][x] = HIT;
+			score++;
 			return 1;
 		break;
 		default:
@@ -141,14 +142,12 @@ void handle_stage2_input(int& x, int& y, SDL_Keycode k) {
 	--board2[y][x];
 	switch (k) {
 		case SDLK_SPACE:
-			if (handle_attack(x, y, board2)) {
-				score1++;
+			if (handle_attack(x, y, board2, score1)) {
 				break;
 			}
-			while (handle_attack(rand() % 10, rand() % 10, board1)) {
-				score2++;
+			while (handle_attack(rand() % 10, rand() % 10, board1, score2)) {
 				draw_boards();
-				SDL_Delay(1000);
+				SDL_Delay(100);
 			}
 		break;
 		case SDLK_LEFT:
@@ -238,7 +237,7 @@ bool listen() {
 	draw_text(text_buf, &text1);
 	sprintf(text_buf, "%d/%d", score2, score_sum);
 	draw_text(text_buf, &text2);
-	while (true) {
+	while (score1 < score_sum && score2 < score_sum) {
 		SDL_Event e;
 		if (SDL_WaitEvent(&e)) {
 			if (e.type == SDL_QUIT) {
@@ -253,6 +252,22 @@ bool listen() {
 		}
 	}
 
+	draw_text(nullptr, &text2);
+	if (score1 == score_sum) {
+		sprintf(text_buf, "YOU WIN!");
+	} else {
+		sprintf(text_buf, "YOU LOSE!");
+	}
+	draw_text(text_buf, &text1);
+
+	while (true) {
+		SDL_Event e;
+		if (SDL_WaitEvent(&e)) {
+			if (e.type == SDL_QUIT) {
+				return 0;
+			}
+		}
+	}
 
 	return 0;
 }
