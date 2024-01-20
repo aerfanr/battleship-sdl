@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_rect.h>
+#include <ctime>
 #include <iostream>
 #include "draw.h"
 
@@ -13,7 +14,7 @@ const int SHIPS[] = {5, 4, 3, 3, 2};
 SDL_Window *window = nullptr;
 SDL_Surface *surface = nullptr;
 
-CellState board[10][10];
+CellState board1[10][10], board2[10][10];
 
 bool init() {
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
@@ -45,14 +46,21 @@ bool init() {
 
 	for (int i = 0; i < 10; i++) {
 		for (int j = 0; j < 10; j++) {
-			board[i][j] = EMPTY;
+			board1[i][j] = EMPTY;
+			board2[i][j] = EMPTY;
 		}
 	}
+
+	srand(std::time(nullptr));
 
 	return 0;
 }
 
-bool place_ship(int x, int y, int width, int height) {
+bool place_ship(int x, int y, int width, int height, CellState board[10][10]) {
+	if (x + width > 10 || y + height > 10) {
+		return 1;
+	}
+
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
 			if (board[y + i][x + j] != EMPTY) {
@@ -77,17 +85,19 @@ void handle_stage1_input(int& x, int& y, SDL_Keycode k, bool& vertical, int& shi
 
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
-			--board[y + i][x + j];
+			--board1[y + i][x + j];
 		}
 	}
 	switch (k) {
 		case SDLK_SPACE:
-			if (place_ship(x, y, width, height)) {
+			if (place_ship(x, y, width, height, board1)) {
 				break;
 			}
 			ship++;
-			width = SHIPS[ship];
-			height = 1;
+			if (ship < sizeof(SHIPS) / sizeof(SHIPS[0])) {
+				width = SHIPS[ship];
+				height = 1;
+			}
 			if (vertical) std::swap(width, height);
 		break;
 		case SDLK_x:
@@ -114,7 +124,30 @@ void handle_stage1_input(int& x, int& y, SDL_Keycode k, bool& vertical, int& shi
 	}
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
-			++board[y + i][x + j];
+			++board1[y + i][x + j];
+		}
+	}
+}
+
+void set_enemy_board() {
+	for (int i = 0; i < sizeof(SHIPS) / sizeof(SHIPS[0]); i++) {
+		int width = SHIPS[i];
+		int height = 1;
+
+		while (true) {
+			if (rand() % 2) {
+				std::swap(width, height);
+			}
+
+			if (!place_ship(
+				rand() % 10,
+				rand() % 10,
+				width, height, board2
+			)) {
+				break;
+			}
+
+			std::cout << "set enemy board " << i << std::endl;
 		}
 	}
 }
@@ -127,14 +160,14 @@ bool listen() {
 
 	pos cursor = {0, 0};
 	for (int i = 0; i < ship_width; i++) {
-		++board[cursor.y][cursor.x + i];
+		++board1[cursor.y][cursor.x + i];
 	}
 
-	while (ship < 5) {
+	while (ship < sizeof(SHIPS) / sizeof(SHIPS[0])) {
 		SDL_Event e;
 		if (SDL_WaitEvent(&e)) {
 			if (e.type == SDL_QUIT) {
-				break;
+				return 0;
 			}
 
 			if (e.type == SDL_KEYDOWN) {
@@ -145,11 +178,27 @@ bool listen() {
 			}
 		}
 
-		if (draw_board(board, surface, false, 10, 10)) return 1;
-		if (draw_board(board, surface, true, 300, 10)) return 1;
+		if (draw_board(board1, surface, true, 300, 10)) return 1;
 
 		SDL_UpdateWindowSurface(window);
 	}
+
+	set_enemy_board();
+	if (draw_board(board2, surface, true, 10, 10)) return 1;
+	SDL_UpdateWindowSurface(window);
+
+	while (true) {
+		SDL_Event e;
+		if (SDL_WaitEvent(&e)) {
+			if (e.type == SDL_QUIT) {
+				return 0;
+			}
+
+			if (e.type == SDL_KEYDOWN) {
+			}
+		}
+	}
+
 
 	return 0;
 }
@@ -169,7 +218,6 @@ int main(int argc, char *argv[]) {
 	);
 
 	if (listen()) return 1;
-
 
 	if (quit()) return 1;
 
