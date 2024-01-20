@@ -13,3 +13,4 @@ target_include_directories(battleship PRIVATE src)
 
 target_link_libraries(battleship SDL2main SDL2)
 target_link_libraries(battleship SDL2_image SDL2)
+target_link_libraries(battleship SDL2_ttf SDL2)

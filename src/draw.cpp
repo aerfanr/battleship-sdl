@@ -2,6 +2,7 @@
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_surface.h>
+#include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_video.h>
 #include <iostream>
 
@@ -16,6 +17,7 @@ CellState& operator--(CellState& state) {
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
 SDL_Surface *surface = nullptr;
+TTF_Font *font = nullptr;
 
 bool init_draw() {
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
@@ -36,6 +38,18 @@ bool init_draw() {
 		return 1;
 	}
 
+	if (TTF_Init()) {
+		std::cerr << "Failed to initialize TTF: "
+			<< TTF_GetError() << std::endl;
+		return 1;
+	}
+	font = TTF_OpenFont("assets/FreeSans.ttf", 24);
+	if (font == nullptr) {
+		std::cerr << "Failed to load font: "
+			<< TTF_GetError() << std::endl;
+		return 1;
+	}
+
 	surface = SDL_GetWindowSurface(window);
 	if (surface == nullptr) {
 		std::cerr << "Failed to load image: "
@@ -53,6 +67,18 @@ bool init_draw() {
 void quit_draw() {
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+	TTF_Quit();
+}
+
+void draw_text(const char *text, SDL_Rect* rect) {
+	SDL_FillRect(surface, rect, SDL_MapRGB(surface->format, 0xFF, 0xFF, 0xFF));
+
+	SDL_Surface *text_surface = TTF_RenderText_Solid(font, text, SDL_Color{0x00, 0x00, 0x00});
+	rect->w = text_surface->w;
+	rect->h = text_surface->h;
+	SDL_UpperBlit(text_surface, NULL, surface, rect);
+
+	SDL_UpdateWindowSurface(window);
 }
 
 bool draw_board(CellState board[10][10], bool show, int x, int y) {

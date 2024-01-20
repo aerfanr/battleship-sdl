@@ -2,6 +2,7 @@
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_ttf.h>
+#include <cstdio>
 #include <ctime>
 #include <iostream>
 #include "draw.h"
@@ -11,10 +12,12 @@ struct pos {
 	int y;
 };
 
-const int SHIPS[] = {5, 4, 3, 3, 2};
-
+const int SHIPS[] = {5, 4, 4, 3, 3, 2, 2, 2};
 
 CellState board1[10][10], board2[10][10];
+int score1, score2, score_sum;
+SDL_Rect text1 = {10, 300, 0, 0}, text2 = {300, 300, 0, 0};
+char text_buf[64];
 
 void draw_boards() {
 	draw_board(board1, true, 300, 10);
@@ -29,6 +32,10 @@ bool init() {
 			board1[i][j] = EMPTY;
 			board2[i][j] = EMPTY;
 		}
+	}
+
+	for (int i = 0; i < sizeof(SHIPS) / sizeof(SHIPS[0]); i++) {
+		score_sum += SHIPS[i];
 	}
 
 	srand(std::time(nullptr));
@@ -134,8 +141,12 @@ void handle_stage2_input(int& x, int& y, SDL_Keycode k) {
 	--board2[y][x];
 	switch (k) {
 		case SDLK_SPACE:
-			if (handle_attack(x, y, board2)) break;
+			if (handle_attack(x, y, board2)) {
+				score1++;
+				break;
+			}
 			while (handle_attack(rand() % 10, rand() % 10, board1)) {
+				score2++;
 				draw_boards();
 				SDL_Delay(1000);
 			}
@@ -158,6 +169,11 @@ void handle_stage2_input(int& x, int& y, SDL_Keycode k) {
 	++board2[y][x];
 
 	draw_boards();
+
+	sprintf(text_buf, "%d/%d", score1, score_sum);
+	draw_text(text_buf, &text1);
+	sprintf(text_buf, "%d/%d", score2, score_sum);
+	draw_text(text_buf, &text2);
 }
 
 void set_enemy_board() {
@@ -194,6 +210,11 @@ bool listen() {
 
 	draw_boards();
 	while (ship < sizeof(SHIPS) / sizeof(SHIPS[0])) {
+		sprintf(
+			text_buf, "Ship %d/%lu",
+			ship + 1, sizeof(SHIPS) / sizeof(SHIPS[0])
+		);
+		draw_text(text_buf, &text1);
 		SDL_Event e;
 		if (SDL_WaitEvent(&e)) {
 			if (e.type == SDL_QUIT) {
@@ -213,6 +234,10 @@ bool listen() {
 	++board2[cursor.y][cursor.x];
 	draw_boards();
 
+	sprintf(text_buf, "%d/%d", score1, score_sum);
+	draw_text(text_buf, &text1);
+	sprintf(text_buf, "%d/%d", score2, score_sum);
+	draw_text(text_buf, &text2);
 	while (true) {
 		SDL_Event e;
 		if (SDL_WaitEvent(&e)) {

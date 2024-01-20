@@ -14,5 +14,6 @@ CellState& operator--(CellState& state);
 bool init_draw();
 void quit_draw();
 bool draw_board(CellState board[10][10], bool show, int x, int y);
+void draw_text(const char *text, SDL_Rect* target);
 
 #endif // !DRAW_H
