@@ -120,7 +120,7 @@ void handle_stage1_input(int& x, int& y, SDL_Keycode k, bool& vertical, int& shi
 	draw_boards();
 }
 
-bool handle_attack(int x, int y, CellState board[10][10], int &score) {
+int handle_attack(int x, int y, CellState board[10][10], int &score) {
 	switch (board[y][x]) {
 		case EMPTY:
 			board[y][x] = MISS;
@@ -128,7 +128,7 @@ bool handle_attack(int x, int y, CellState board[10][10], int &score) {
 		case FULL:
 			board[y][x] = HIT;
 			score++;
-			return 1;
+			return 2;
 		break;
 		default:
 			return 1;
@@ -138,6 +138,40 @@ bool handle_attack(int x, int y, CellState board[10][10], int &score) {
 	return 0;
 }
 
+void enemy_attack() {
+	int x = rand() % 10;
+	int y = rand() % 10;
+	int res;
+	do {
+		res = handle_attack(x, y, board1, score2);
+		draw_boards();
+		if (res == 2) {
+			x = rand() % 10;
+			y = rand() % 10;
+		} else if (res == 1) {
+			int next = rand() % 4;
+			switch (next) {
+				case 0:
+					if (x > 0) x--;
+				break;
+				case 1:
+					if (x < 10 - 1) x++;
+				break;
+				case 2:
+					if (y > 0) y--;
+				break;
+				case 3:
+					if (y < 10 - 1) y++;
+				break;
+				default:
+				break;
+			}
+
+			SDL_Delay(100);
+		}
+	} while (res);
+}
+
 void handle_stage2_input(int& x, int& y, SDL_Keycode k) {
 	--board2[y][x];
 	switch (k) {
@@ -145,10 +179,7 @@ void handle_stage2_input(int& x, int& y, SDL_Keycode k) {
 			if (handle_attack(x, y, board2, score1)) {
 				break;
 			}
-			while (handle_attack(rand() % 10, rand() % 10, board1, score2)) {
-				draw_boards();
-				SDL_Delay(100);
-			}
+			enemy_attack();
 		break;
 		case SDLK_LEFT:
 			if (x > 0) x--;
