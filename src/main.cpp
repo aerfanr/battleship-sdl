@@ -6,30 +6,12 @@
 #include <ctime>
 #include <iostream>
 #include "draw.h"
-
-struct pos {
-	int x;
-	int y;
-};
-
-struct Game {
-	CellState board1[10][10];
-	CellState board2[10][10];
-	SDL_Rect text1_rect = {10, 300, 0, 0};
-	SDL_Rect text2_rect = {300, 300, 0, 0};
-	char text1[64];
-	char text2[64];
-};
+#include "main.h"
 
 const int SHIPS[] = {5, 4, 4, 3, 3, 2, 2, 2};
 
 Game game;
 int score1, score2, score_sum;
-
-void draw_boards() {
-	draw_board(game.board1, true, 300, 10);
-	draw_board(game.board2, false, 10, 10);
-}
 
 bool init() {
 	if (init_draw()) return 1;
@@ -89,7 +71,7 @@ void handle_stage1_input(int& x, int& y, SDL_Keycode k, bool& vertical, int& shi
 			}
 			ship++;
 			if (ship >= sizeof(SHIPS) / sizeof(SHIPS[0])) {
-				draw_boards();
+				draw_frame(&game);
 				return;
 			}
 			width = SHIPS[ship];
@@ -124,7 +106,7 @@ void handle_stage1_input(int& x, int& y, SDL_Keycode k, bool& vertical, int& shi
 		}
 	}
 
-	draw_boards();
+	draw_frame(&game);
 }
 
 int handle_attack(int x, int y, CellState board[10][10], int &score) {
@@ -151,7 +133,7 @@ void enemy_attack() {
 	int res;
 	do {
 		res = handle_attack(x, y, game.board1, score2);
-		draw_boards();
+		draw_frame(&game);
 		if (res == 2) {
 			x = rand() % 10;
 			y = rand() % 10;
@@ -205,12 +187,10 @@ void handle_stage2_input(int& x, int& y, SDL_Keycode k) {
 	}
 	++game.board2[y][x];
 
-	draw_boards();
-
 	sprintf(game.text1, "%d/%d", score1, score_sum);
 	sprintf(game.text2, "%d/%d", score2, score_sum);
-	draw_text(game.text1, &game.text1_rect);
-	draw_text(game.text2, &game.text2_rect);
+
+	draw_frame(&game);
 }
 
 void set_enemy_board() {
@@ -245,13 +225,12 @@ bool listen() {
 		++game.board1[cursor.y][cursor.x + i];
 	}
 
-	draw_boards();
 	while (ship < sizeof(SHIPS) / sizeof(SHIPS[0])) {
 		sprintf(
 			game.text1, "Ship %d/%lu",
 			ship + 1, sizeof(SHIPS) / sizeof(SHIPS[0])
 		);
-		draw_text(game.text1, &game.text1_rect);
+		draw_frame(&game);
 		SDL_Event e;
 		if (SDL_WaitEvent(&e)) {
 			if (e.type == SDL_QUIT) {
@@ -269,12 +248,11 @@ bool listen() {
 
 	set_enemy_board();
 	++game.board2[cursor.y][cursor.x];
-	draw_boards();
 
 	sprintf(game.text1, "%d/%d", score1, score_sum);
 	sprintf(game.text2, "%d/%d", score2, score_sum);
-	draw_text(game.text1, &game.text1_rect);
-	draw_text(game.text2, &game.text2_rect);
+
+	draw_frame(&game);
 
 	while (score1 < score_sum && score2 < score_sum) {
 		SDL_Event e;
@@ -291,13 +269,13 @@ bool listen() {
 		}
 	}
 
-	draw_text(game.text2, &game.text2_rect);
+	sprintf(game.text2, " ");
 	if (score1 == score_sum) {
 		sprintf(game.text1, "YOU WIN!");
 	} else {
 		sprintf(game.text1, "YOU LOSE!");
 	}
-	draw_text(game.text1, &game.text1_rect);
+	draw_frame(&game);
 
 	while (true) {
 		SDL_Event e;

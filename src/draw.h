@@ -1,19 +1,12 @@
 #ifndef DRAW_H
 #define DRAW_H
-#include <SDL2/SDL.h>
-
-enum CellState {
-	EMPTY = 0, EMPTY_S,
-	FULL, FULL_S,
-	HIT, HIT_S,
-	MISS, MISS_S
-};
-CellState& operator++(CellState& state);
-CellState& operator--(CellState& state);
+#include <SDL2/SDL_rect.h>
+#include "main.h"
 
 bool init_draw();
 void quit_draw();
-bool draw_board(CellState board[10][10], bool show, int x, int y);
-void draw_text(const char *text, SDL_Rect* target);
+// bool draw_board(CellState board[10][10], bool show, int x, int y);
+// void draw_text(const char *text, SDL_Rect* target);
+void draw_frame(Game *game);
 
 #endif // !DRAW_H

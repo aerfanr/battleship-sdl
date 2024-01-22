@@ -73,8 +73,7 @@ void quit_draw() {
 void draw_text(const char *text, SDL_Rect* rect) {
 	SDL_FillRect(surface, rect, SDL_MapRGB(surface->format, 0xFF, 0xFF, 0xFF));
 
-	if (text == nullptr) {
-		SDL_UpdateWindowSurface(window);
+	if (text == nullptr || text[0] == '\0') {
 		return;
 	}
 
@@ -82,8 +81,6 @@ void draw_text(const char *text, SDL_Rect* rect) {
 	rect->w = text_surface->w;
 	rect->h = text_surface->h;
 	SDL_UpperBlit(text_surface, NULL, surface, rect);
-
-	SDL_UpdateWindowSurface(window);
 }
 
 bool draw_board(CellState board[10][10], bool show, int x, int y) {
@@ -161,8 +158,15 @@ bool draw_board(CellState board[10][10], bool show, int x, int y) {
 		}
 	}
 
-	SDL_UpdateWindowSurface(window);
-
 	return 0;
 }
 
+void draw_frame(Game *game) {
+	draw_board(game->board1, true, 300, 10);
+	draw_board(game->board2, false, 10, 10);
+
+	draw_text(game->text1, &game->text1_rect);
+	draw_text(game->text2, &game->text2_rect);
+
+	SDL_UpdateWindowSurface(window);
+}

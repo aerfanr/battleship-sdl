@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 project(battleship CXX)
 
 set(SOURCES
-	src/main.cpp
+	src/main.cpp src/main.h
 	src/draw.h src/draw.cpp
 )
 
