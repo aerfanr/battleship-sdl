@@ -1,6 +1,7 @@
 #include "draw.h"
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_rect.h>
+#include <SDL2/SDL_render.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_video.h>
@@ -16,7 +17,6 @@ CellState& operator--(CellState& state) {
 
 SDL_Window *window = nullptr;
 SDL_Renderer *renderer = nullptr;
-SDL_Surface *surface = nullptr;
 TTF_Font *font = nullptr;
 
 bool init_draw() {
@@ -38,6 +38,8 @@ bool init_draw() {
 		return 1;
 	}
 
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
 	if (TTF_Init()) {
 		std::cerr << "Failed to initialize TTF: "
 			<< TTF_GetError() << std::endl;
@@ -50,17 +52,6 @@ bool init_draw() {
 		return 1;
 	}
 
-	surface = SDL_GetWindowSurface(window);
-	if (surface == nullptr) {
-		std::cerr << "Failed to load image: "
-			<< SDL_GetError() << std::endl;
-		return 1;
-	}
-
-	SDL_FillRect(surface, NULL, 
-	      SDL_MapRGB(surface->format, 0xFF, 0xFF, 0xFF)
-	);
-
 	return 0;
 }
 
@@ -71,16 +62,21 @@ void quit_draw() {
 }
 
 void draw_text(const char *text, SDL_Rect* rect) {
-	SDL_FillRect(surface, rect, SDL_MapRGB(surface->format, 0xFF, 0xFF, 0xFF));
+	SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+	SDL_RenderFillRect(renderer, rect);
 
 	if (text == nullptr || text[0] == '\0') {
 		return;
 	}
 
-	SDL_Surface *text_surface = TTF_RenderText_Solid(font, text, SDL_Color{0x00, 0x00, 0x00});
-	rect->w = text_surface->w;
-	rect->h = text_surface->h;
-	SDL_UpperBlit(text_surface, NULL, surface, rect);
+	SDL_Surface *surface = TTF_RenderText_Solid(font, text, SDL_Color{0x00, 0x00, 0x00});
+	rect->w = surface->w;
+	rect->h = surface->h;
+
+	SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+	SDL_FreeSurface(surface);
+	SDL_RenderCopy(renderer, texture, NULL, rect);
+	SDL_DestroyTexture(texture);
 }
 
 bool draw_board(CellState board[10][10], bool show, int x, int y) {
@@ -94,9 +90,8 @@ bool draw_board(CellState board[10][10], bool show, int x, int y) {
 		CELL_SIZE * 10 + PADDING * 11
 	};
 
-	SDL_FillRect(surface, &back, 
-	      SDL_MapRGB(surface->format, 0x20, 0x20, 0xaa)
-	);
+	SDL_SetRenderDrawColor(renderer, 0x20, 0x20, 0xaa, 0x80);
+	SDL_RenderFillRect(renderer, &back);
 
 	for (int i = 0; i < 10; i++) {
 		for (int j = 0; j < 10; j++) {
@@ -108,10 +103,8 @@ bool draw_board(CellState board[10][10], bool show, int x, int y) {
 					CELL_SIZE + 2 * PADDING
 				};
 
-				SDL_FillRect(
-					surface, &outline,
-					SDL_MapRGB(surface->format, 0xFF, 0x00, 0x30)
-				);
+				SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x30, 0x80);
+				SDL_RenderFillRect(renderer, &outline);
 			}
 
 			SDL_Rect cell = {
@@ -151,10 +144,8 @@ bool draw_board(CellState board[10][10], bool show, int x, int y) {
 					break;
 			}
 			
-			SDL_FillRect(
-				surface, &cell, 
-				SDL_MapRGB(surface->format, r, g, b)
-			);
+			SDL_SetRenderDrawColor(renderer, r, g, b, 0xFF);
+			SDL_RenderFillRect(renderer, &cell);
 		}
 	}
 
@@ -162,11 +153,14 @@ bool draw_board(CellState board[10][10], bool show, int x, int y) {
 }
 
 void draw_frame(Game *game) {
+	SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+	SDL_RenderClear(renderer);
+
 	draw_board(game->board1, true, 300, 10);
 	draw_board(game->board2, false, 10, 10);
 
 	draw_text(game->text1, &game->text1_rect);
 	draw_text(game->text2, &game->text2_rect);
 
-	SDL_UpdateWindowSurface(window);
+	SDL_RenderPresent(renderer);
 }
