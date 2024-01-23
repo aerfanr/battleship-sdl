@@ -152,7 +152,7 @@ bool draw_board(CellState board[10][10], ShipPos ships[SHIP_COUNT], bool show, i
 					break;
 				case FULL:
 					if (show) {
-						r = 0x00; g = 0x00; b = 0x00;
+						r = 0x40; g = 0x40; b = 0x40;
 					} else {
 						r = SEA_COLOR[(i + j) % 2][0];
 						g = SEA_COLOR[(i + j) % 2][1];
@@ -170,7 +170,7 @@ bool draw_board(CellState board[10][10], ShipPos ships[SHIP_COUNT], bool show, i
 					break;
 			}
 			
-			SDL_SetRenderDrawColor(renderer, r, g, b, 0xFF);
+			SDL_SetRenderDrawColor(renderer, r, g, b, 0x40);
 			SDL_RenderFillRect(renderer, &cell);
 		}
 	}
@@ -181,7 +181,6 @@ bool draw_board(CellState board[10][10], ShipPos ships[SHIP_COUNT], bool show, i
 
 			int width = SHIPS[i];
 			int height = 1;
-			// if (ships[i].vertical) std::swap(width, height);
 
 			SDL_Rect ship = {
 				x + ships[i].x * (CELL_SIZE + PADDING) + PADDING,
@@ -193,10 +192,12 @@ bool draw_board(CellState board[10][10], ShipPos ships[SHIP_COUNT], bool show, i
 				CELL_SIZE / 2,
 				CELL_SIZE / 2
 			};
+
+
 			SDL_RenderCopyEx(
 				renderer, ship_textures[i], NULL, &ship,
 				ships[i].vertical ? 90 : 0,
-				&center, SDL_FLIP_NONE
+				&center, (i % 2) ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE
 			);
 		}
 	}
