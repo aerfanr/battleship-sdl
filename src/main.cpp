@@ -8,8 +8,6 @@
 #include "draw.h"
 #include "main.h"
 
-const int SHIPS[] = {5, 4, 4, 3, 3, 2, 2, 2};
-
 Game game;
 int score1, score2, score_sum;
 
@@ -23,8 +21,10 @@ bool init() {
 		}
 	}
 
-	for (int i = 0; i < sizeof(SHIPS) / sizeof(SHIPS[0]); i++) {
+	for (int i = 0; i < SHIP_COUNT; i++) {
 		score_sum += SHIPS[i];
+		game.ships1[i] = {-1, -1, 0};
+		game.ships2[i] = {-1, -1, 0};
 	}
 
 	srand(std::time(nullptr));
@@ -32,7 +32,11 @@ bool init() {
 	return 0;
 }
 
-bool place_ship(int x, int y, int width, int height, CellState board[10][10]) {
+bool place_ship(int x, int y, int index, bool vertical, CellState board[10][10], ShipPos ships[]) {
+	int width = SHIPS[index];
+	int height = 1;
+	if (vertical) std::swap(width, height);
+
 	if (x + width > 10 || y + height > 10) {
 		return 1;
 	}
@@ -51,6 +55,8 @@ bool place_ship(int x, int y, int width, int height, CellState board[10][10]) {
 		}
 	}
 
+	ships[index] = {x, y, vertical};
+
 	return 0;
 }
 
@@ -66,11 +72,11 @@ void handle_stage1_input(int& x, int& y, SDL_Keycode k, bool& vertical, int& shi
 	}
 	switch (k) {
 		case SDLK_SPACE:
-			if (place_ship(x, y, width, height, game.board1)) {
+			if (place_ship(x, y, ship, vertical, game.board1, game.ships1)) {
 				break;
 			}
 			ship++;
-			if (ship >= sizeof(SHIPS) / sizeof(SHIPS[0])) {
+			if (ship >= SHIP_COUNT) {
 				draw_frame(&game);
 				return;
 			}
@@ -194,19 +200,12 @@ void handle_stage2_input(int& x, int& y, SDL_Keycode k) {
 }
 
 void set_enemy_board() {
-	for (int i = 0; i < sizeof(SHIPS) / sizeof(SHIPS[0]); i++) {
-		int width = SHIPS[i];
-		int height = 1;
-
+	for (int i = 0; i < SHIP_COUNT; i++) {
 		while (true) {
-			if (rand() % 2) {
-				std::swap(width, height);
-			}
-
 			if (!place_ship(
 				rand() % 10,
 				rand() % 10,
-				width, height, game.board2
+				i, rand() % 2, game.board2, game.ships2
 			)) {
 				break;
 			}
@@ -225,10 +224,10 @@ bool listen() {
 		++game.board1[cursor.y][cursor.x + i];
 	}
 
-	while (ship < sizeof(SHIPS) / sizeof(SHIPS[0])) {
+	while (ship < SHIP_COUNT) {
 		sprintf(
-			game.text1, "Ship %d/%lu",
-			ship + 1, sizeof(SHIPS) / sizeof(SHIPS[0])
+			game.text1, "Ship %d/%d",
+			ship + 1, SHIP_COUNT
 		);
 		draw_frame(&game);
 		SDL_Event e;
