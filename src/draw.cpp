@@ -175,31 +175,42 @@ bool draw_board(CellState board[10][10], ShipPos ships[SHIP_COUNT], bool show, i
 		}
 	}
 
-	if (show) {
-		for (int i = 0; i < SHIP_COUNT; i++) {
-			if (ships[i].x == -1) continue;
+	for (int i = 0; i < SHIP_COUNT; i++) {
+		if (ships[i].x == -1) continue;
 
-			int width = SHIPS[i];
-			int height = 1;
-
-			SDL_Rect ship = {
-				x + ships[i].x * (CELL_SIZE + PADDING) + PADDING,
-				y + ships[i].y * (CELL_SIZE + PADDING) + PADDING,
-				width * CELL_SIZE,
-				height * CELL_SIZE
-			};
-			SDL_Point center = {
-				CELL_SIZE / 2,
-				CELL_SIZE / 2
-			};
-
-
-			SDL_RenderCopyEx(
-				renderer, ship_textures[i], NULL, &ship,
-				ships[i].vertical ? 90 : 0,
-				&center, (i % 2) ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE
-			);
+		bool distroyed = true;
+		for (int j = 0; j < SHIPS[i]; j++) {
+			CellState cell = (ships[i].vertical) ?
+				board[ships[i].y + j][ships[i].x] :
+				board[ships[i].y][ships[i].x + j];
+			if (cell / 2 * 2 != HIT) {
+				distroyed = false;
+				break;
+			}
 		}
+
+		if (!show && !distroyed) continue;
+
+		int width = SHIPS[i];
+		int height = 1;
+
+		SDL_Rect ship = {
+			x + ships[i].x * (CELL_SIZE + PADDING) + PADDING,
+			y + ships[i].y * (CELL_SIZE + PADDING) + PADDING,
+			width * CELL_SIZE,
+			height * CELL_SIZE
+		};
+		SDL_Point center = {
+			CELL_SIZE / 2,
+			CELL_SIZE / 2
+		};
+
+
+		SDL_RenderCopyEx(
+			renderer, ship_textures[i], NULL, &ship,
+			ships[i].vertical ? 90 : 0,
+			&center, (i % 2) ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE
+		);
 	}
 
 	return 0;
