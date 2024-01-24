@@ -25,6 +25,8 @@ TTF_Font *font = nullptr;
 
 SDL_Texture *background = nullptr;
 SDL_Texture *ship_textures[SHIP_COUNT];
+SDL_Texture *hit_texture = nullptr;
+SDL_Texture *miss_texture = nullptr;
 
 void loadImages() {
 	background = SDL_CreateTextureFromSurface(renderer, IMG_Load("assets/bg.png"));
@@ -35,6 +37,9 @@ void loadImages() {
 			IMG_Load(("assets/ship" + std::to_string(i) + ".png").c_str())
 		);
 	}
+
+	hit_texture = SDL_CreateTextureFromSurface(renderer, IMG_Load("assets/hit.png"));
+	miss_texture = SDL_CreateTextureFromSurface(renderer, IMG_Load("assets/miss.png"));
 }
 
 bool init_draw() {
@@ -45,8 +50,8 @@ bool init_draw() {
 	}
 
 	if (SDL_CreateWindowAndRenderer(
-		640,
-		480,
+		580,
+		360,
 		SDL_WINDOW_SHOWN,
 		&window,
 		&renderer
@@ -85,6 +90,7 @@ void quit_draw() {
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 	TTF_Quit();
+	IMG_Quit();
 }
 
 void draw_text(const char *text, SDL_Rect* rect) {
@@ -112,66 +118,8 @@ bool draw_board(CellState board[10][10], ShipPos ships[SHIP_COUNT], bool show, i
 		CELL_SIZE * 10 + PADDING * 11,
 		CELL_SIZE * 10 + PADDING * 11
 	};
-
 	SDL_SetRenderDrawColor(renderer, 0x20, 0x20, 0xaa, 0x80);
 	SDL_RenderFillRect(renderer, &back);
-
-	for (int i = 0; i < 10; i++) {
-		for (int j = 0; j < 10; j++) {
-			if (board[i][j] % 2) {
-				SDL_Rect outline = {
-					x + j * (CELL_SIZE + PADDING),
-					y + i * (CELL_SIZE + PADDING),
-					CELL_SIZE + 2 * PADDING,
-					CELL_SIZE + 2 * PADDING
-				};
-
-				SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x30, 0x80);
-				SDL_RenderFillRect(renderer, &outline);
-			}
-
-			SDL_Rect cell = {
-				x + j * (CELL_SIZE + PADDING) + PADDING,
-				y + i * (CELL_SIZE + PADDING) + PADDING,
-				CELL_SIZE,
-				CELL_SIZE
-			};
-
-			unsigned char r;
-			unsigned char g;
-			unsigned char b;
-
-			switch (board[i][j] / 2 * 2) {
-				case EMPTY:
-					r = SEA_COLOR[(i + j) % 2][0];
-					g = SEA_COLOR[(i + j) % 2][1];
-					b = SEA_COLOR[(i + j) % 2][2];
-					break;
-				case FULL:
-					if (show) {
-						r = 0x40; g = 0x40; b = 0x40;
-					} else {
-						r = SEA_COLOR[(i + j) % 2][0];
-						g = SEA_COLOR[(i + j) % 2][1];
-						b = SEA_COLOR[(i + j) % 2][2];
-					}
-					break;
-				case HIT:
-					r = 0x00; g = 0xFF; b = 0x00;
-					break;
-				case MISS:
-					r = 0xFF; g = 0x00; b = 0x00;
-					break;
-				default:
-					r = 0xFF; g = 0xFF; b = 0xFF;
-					break;
-			}
-			
-			SDL_SetRenderDrawColor(renderer, r, g, b, 0x40);
-			SDL_RenderFillRect(renderer, &cell);
-		}
-	}
-
 	for (int i = 0; i < SHIP_COUNT; i++) {
 		if (ships[i].x == -1) continue;
 
@@ -208,6 +156,71 @@ bool draw_board(CellState board[10][10], ShipPos ships[SHIP_COUNT], bool show, i
 			ships[i].vertical ? 90 : 0,
 			&center, (i % 2) ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE
 		);
+	}
+
+	for (int i = 0; i < 10; i++) {
+		for (int j = 0; j < 10; j++) {
+			if (board[i][j] % 2) {
+				SDL_Rect outline = {
+					x + j * (CELL_SIZE + PADDING),
+					y + i * (CELL_SIZE + PADDING),
+					CELL_SIZE + 2 * PADDING,
+					CELL_SIZE + 2 * PADDING
+				};
+
+				SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x30, 0x80);
+				SDL_RenderFillRect(renderer, &outline);
+			}
+
+			SDL_Rect cell = {
+			x + j * (CELL_SIZE + PADDING) + PADDING,
+			y + i * (CELL_SIZE + PADDING) + PADDING,
+				CELL_SIZE,
+				CELL_SIZE
+			};
+
+			unsigned char r;
+			unsigned char g;
+			unsigned char b;
+			unsigned char a = 0x40;
+			unsigned char sea_alpha = (i + j) % 2 ? 0x20 : 0x08;
+
+			switch (board[i][j] / 2 * 2) {
+				case EMPTY:
+					r = 0xFF; g = 0xFF; b = 0xFF;
+					a = sea_alpha;
+				break;
+				case FULL:
+					if (show) {
+						r = 0x40; g = 0x40; b = 0x40;
+					} else {
+						r = 0xFF; g = 0xFF; b = 0xFF;
+						a = sea_alpha;
+					}
+				break;
+				case HIT:
+					r = 0x00; g = 0xFF; b = 0x00; a = 0x00;
+					SDL_RenderCopyEx(
+						renderer, hit_texture, NULL, &cell,
+						90 * (i + j), NULL, SDL_FLIP_NONE
+					);
+				break;
+				case MISS:
+					r = 0xFF; g = 0x00; b = 0x00; a = 0x00;
+					SDL_RenderCopyEx(
+						renderer, miss_texture, NULL, &cell,
+						90 * (i + j), NULL, SDL_FLIP_NONE
+					);
+				break;
+				default:
+					r = 0xFF; g = 0xFF; b = 0xFF;
+					a = (i + j) % 2 ? 0x20 : 0x00;
+				break;
+			}
+
+			SDL_SetRenderDrawColor(renderer, r, g, b, a);
+			SDL_RenderFillRect(renderer, &cell);
+		}
 	}
 
 	return 0;
