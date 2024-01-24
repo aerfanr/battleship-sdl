@@ -1,6 +1,6 @@
 # Battleship-SDL
 
-Battleship-SDL is a simple implementation of the classic [Battleship](https://en.wikipedia.org/wiki/Battleship) game in C++ using the SDL2 library.
+Battleship-SDL is a simple implementation of the classic [Battleship](https://en.wikipedia.org/wiki/Battleship_(game)) game in C++ using the SDL2 library.
 
 ![Screenshot](screenshot.png)
 
