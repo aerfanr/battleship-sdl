@@ -63,7 +63,7 @@ bool init_draw() {
 			<< TTF_GetError() << std::endl;
 		return 1;
 	}
-	font = TTF_OpenFont("assets/FreeSans.ttf", 24);
+	font = TTF_OpenFont("assets/FreeSans.ttf", 36);
 	if (font == nullptr) {
 		std::cerr << "Failed to load font: "
 			<< TTF_GetError() << std::endl;
@@ -88,9 +88,6 @@ void quit_draw() {
 }
 
 void draw_text(const char *text, SDL_Rect* rect) {
-	SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-	SDL_RenderFillRect(renderer, rect);
-
 	if (text == nullptr || text[0] == '\0') {
 		return;
 	}
@@ -178,18 +175,18 @@ bool draw_board(CellState board[10][10], ShipPos ships[SHIP_COUNT], bool show, i
 	for (int i = 0; i < SHIP_COUNT; i++) {
 		if (ships[i].x == -1) continue;
 
-		bool distroyed = true;
+		bool destroyed = true;
 		for (int j = 0; j < SHIPS[i]; j++) {
 			CellState cell = (ships[i].vertical) ?
 				board[ships[i].y + j][ships[i].x] :
 				board[ships[i].y][ships[i].x + j];
 			if (cell / 2 * 2 != HIT) {
-				distroyed = false;
+				destroyed = false;
 				break;
 			}
 		}
 
-		if (!show && !distroyed) continue;
+		if (!(show || destroyed)) continue;
 
 		int width = SHIPS[i];
 		int height = 1;
